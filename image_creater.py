@@ -12,7 +12,7 @@ from other_work import expend_box
 img_num_has_created = 0
 
 def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font/*.*'),
-             maxLen=10,minLen=10,imgsize=[860, 1024, 1600],backPaths=glob.glob('./bg/*.*'),swap_rate=0.9):
+             maxLen=10,minLen=10,imgsize=[860, 1024, 1600],backPaths=glob.glob('./bg/*.*'),swap_rate=0.83):
 
     # 绘制文字  生成50个，每个长度是10的文字序列
     txtlist = select_txt(corpus_path,maxLen,minLen)
@@ -37,6 +37,7 @@ def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font
         fontSize = random.randint(28, 40)  # 字体大小
         # fontSize=10
         font = ImageFont.truetype(fontType, fontSize)
+        # print(fontType)
 
         charW, charH = draw.textsize(text=lable, font=font)
         if cY < Y - 3.4*initY and cX + charW <= X - initX:
@@ -57,30 +58,27 @@ def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font
             pass
 
     temp = randNum(0, 1200)
+    warpImage(bimg)
 
-
-    bimg = enhance_sharpness(bimg)
-    bimg = enhance_brighness(bimg)
-    bimg = enhance_color(bimg)
-
-    if temp >=1020 and temp<=1200*swap_rate:
+    if temp >=950 and temp<=1200*swap_rate:
         bimg = enhance_brighness(bimg)
         bimg = enhance_color(bimg)
+        bimg = setdim(bimg)
 
-    elif temp>= 950:
+    elif temp>= 910:
         bimg = enhance_sharpness(bimg)
         addline(draw, size)
 
     elif temp >= 700:
         bimg, imgBoxes = setwarp(bimg, size, imgBoxes,H)
         addline(draw, size)
+        bimg = setdim(bimg)
     elif temp >= 600:
         setnoisy(draw,size[0])
         bimg = setrorate(bimg,H)
         addline(draw, size)
     elif temp >= 500:
         setnoisy(draw,size[0])
-        addline(draw, size)
         bimg = setdim(bimg)
     elif temp >= 400:
         setnoisy(draw,size[0])
@@ -104,29 +102,43 @@ def imgscreate(W,H,wordclassnum,corpus_path = glob.glob('./corpus/*.txt'),
 
     global img_num_has_created
 
-    # 图像生成和对应文本保存
-    im, imgBoxes, texts = draw_txt(H,corpus_path,font_path,maxLen,minLen,image_size,background_path)
+    try:
+        # 图像生成和对应文本保存
+        im, imgBoxes, texts = draw_txt(H, corpus_path, font_path, maxLen, minLen, image_size, background_path)
+    except Exception,e:
+        print(e,texts)
+
+
+
 
     for index, box in enumerate(imgBoxes):
-        # print box
-        img_num_has_created += 1
-        smimg = im.crop(box)
-        path = os.path.join(root, uuid1().__str__())
-        smimg = smimg.resize((W, H), Image.ANTIALIAS)
-        sming = smimg.convert("RGB")
-        sming.save(path + ".jpg")
+        try:
+            # print box
+            img_num_has_created += 1
+            smimg = im.crop(box)
+            path = os.path.join(root, uuid1().__str__())
+            smimg = smimg.resize((W, H), Image.ANTIALIAS)
+            sming = smimg.convert("RGB")
 
-        with open(path + ".txt", "w") as datatxt:
-            datatxt.write(texts[index].encode('utf-8'))
+            sming = blur_img(sming,rate=0.1)
 
-        for word in texts[index]:
-            if word not in wordclassnum.keys():
-                wordclassnum[word] = 1
-            else:
-                num = wordclassnum[word]
-                wordclassnum[word] = num + 1
+            sming = warpImage(sming,warp_rate=0.1)
 
-        if img_num_has_created % show_interval == 0:
-            print "create %d picture" % img_num_has_created
+            sming.save(path + ".jpg")
+
+            with open(path + ".txt", "w") as datatxt:
+                datatxt.write(texts[index].encode('utf-8'))
+
+            for word in texts[index]:
+                if word not in wordclassnum.keys():
+                    wordclassnum[word] = 1
+                else:
+                    num = wordclassnum[word]
+                    wordclassnum[word] = num + 1
+
+            if img_num_has_created % show_interval == 0:
+                print "create %d picture" % img_num_has_created
+        except Exception,e:
+            print(e,font_path)
 
     return wordclassnum
