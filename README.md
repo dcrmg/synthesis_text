@@ -3,7 +3,7 @@
 
 usage:
 
-python synthesis_text.py
+  python synthesis_text.py
 
 
 synthetic images will save to ./data
