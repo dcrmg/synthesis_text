@@ -12,7 +12,7 @@ from other_work import expend_box
 img_num_has_created = 0
 
 def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font/*.*'),
-             maxLen=10,minLen=10,imgsize=[860, 1024, 1600],backPaths=glob.glob('./bg/*.*'),swap_rate=0.83):
+             maxLen=10,minLen=10,imgsize=[860, 1024],backPaths=glob.glob('./bg/*.*'),swap_rate=0.92):
 
     # 绘制文字  生成50个，每个长度是10的文字序列
     txtlist = select_txt(corpus_path,maxLen,minLen)
@@ -30,7 +30,7 @@ def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font
     draw = ImageDraw.Draw(bimg)
     fontType = random.choice(fonts)  # 随机获取一种字体
 
-    cX = initX
+    cX = initX + 0.18*X
     cY = initY
     span = 30
     for lable in txtlist:
@@ -40,7 +40,7 @@ def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font
         # print(fontType)
 
         charW, charH = draw.textsize(text=lable, font=font)
-        if cY < Y - 3.4*initY and cX + charW <= X - initX:
+        if cY < Y - 1.4*initY and cX + charW <= X - initX:
             draw.text(xy=(cX, cY), text=lable, font=font, fill="black")
             box = cX, cY, cX + charW, cY + charH
 
@@ -53,62 +53,32 @@ def draw_txt(H,corpus_path = glob.glob('./corpus/*.txt'),fonts=glob.glob('./font
             imgBoxes.append([x1, y1, x2, y2])
             textboxs.append(lable)
             cY += charH + span
-            cX += span-5
+            # cX += span-5
         else:
             pass
 
-    temp = randNum(0, 1200)
-    warpImage(bimg)
-
-    if temp >=950 and temp<=1200*swap_rate:
-        bimg = enhance_brighness(bimg)
-        bimg = enhance_color(bimg)
-        bimg = setdim(bimg)
-
-    elif temp>= 910:
-        bimg = enhance_sharpness(bimg)
-        addline(draw, size)
-
-    elif temp >= 700:
-        bimg, imgBoxes = setwarp(bimg, size, imgBoxes,H)
-        addline(draw, size)
-        bimg = setdim(bimg)
-    elif temp >= 600:
-        setnoisy(draw,size[0])
-        bimg = setrorate(bimg,H)
-        addline(draw, size)
-    elif temp >= 500:
-        setnoisy(draw,size[0])
-        bimg = setdim(bimg)
-    elif temp >= 400:
-        setnoisy(draw,size[0])
-    elif temp >= 300:
-        setnoisy(draw,size[0])
-        addline(draw, size)
-    elif temp >= 200:
-        bimg = setdim(bimg)
-        bimg = setrorate(bimg,H)
-    elif temp >= 100:
-        bimg, imgBoxes = setwarp(bimg, size, imgBoxes,H)
-    elif temp >=50:
-        bimg=setrorate(bimg,H)
+    bimg,flag = blur_img(bimg,0.8)
+    bimg = warpImage(bimg,warp_rate=0.8)
+    imgBoxes = move_box(imgBoxes,move_rate=0.6)
+    bimg = enhance_brighness(bimg,0.5)
+    bimg = enhance_color(bimg,0.4)
+    bimg = enhance_sharpness(bimg,0.3)
+    draw = ImageDraw.Draw(bimg)
+    addline(draw, size,flag,0.2)
+    setnoisy(draw, size[0], flag,0.6)
 
     return bimg, imgBoxes, textboxs
 
 
 def imgscreate(W,H,wordclassnum,corpus_path = glob.glob('./corpus/*.txt'),
                background_path=glob.glob('./bg/*.*'),font_path=glob.glob('./font/*.*'),
-               maxLen=10,minLen=10,image_size=[860, 1024, 1600] ,root='./data/0',show_interval=1000):
+               maxLen=10,minLen=10,image_size=[860, 1024] ,root='./data/0',show_interval=1000):
 
     global img_num_has_created
 
-    try:
-        # 图像生成和对应文本保存
-        im, imgBoxes, texts = draw_txt(H, corpus_path, font_path, maxLen, minLen, image_size, background_path)
-    except Exception,e:
-        print(e,texts)
 
-
+    # 图像生成和对应文本保存
+    im, imgBoxes, texts = draw_txt(H, corpus_path, font_path, maxLen, minLen, image_size, background_path)
 
 
     for index, box in enumerate(imgBoxes):
@@ -119,10 +89,6 @@ def imgscreate(W,H,wordclassnum,corpus_path = glob.glob('./corpus/*.txt'),
             path = os.path.join(root, uuid1().__str__())
             smimg = smimg.resize((W, H), Image.ANTIALIAS)
             sming = smimg.convert("RGB")
-
-            sming = blur_img(sming,rate=0.1)
-
-            sming = warpImage(sming,warp_rate=0.1)
 
             sming.save(path + ".jpg")
 

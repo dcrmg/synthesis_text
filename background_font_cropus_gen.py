@@ -40,7 +40,7 @@ def randNum(low, high):
     return random.randint(low, high)
 
 
-def buider_bimg(imgsize=[860, 1024, 1600],backPaths=glob.glob('./bg/*.*')):
+def buider_bimg(imgsize=[860, 1024],backPaths=glob.glob('./bg/*.*')):
 
     # 图像背景生成
     temp = randNum(0, 10)
